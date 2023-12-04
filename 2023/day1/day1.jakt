@@ -1,0 +1,69 @@
+import utils { is_digit }
+
+comptime part1_expected_value() => 55017u64
+comptime part2_expected_value() => 53539u64
+
+fn parse_line(line: String) throws -> u64 {
+    mut digits: [u64] = []
+    for i in 0..line.length() {
+        let c = line.byte_at(i) as! c_char
+        if is_digit(c) {
+            digits.push((c - c'0') as! u64)
+        }
+    }
+
+    guard digits.size() > 0 else {
+        eprintln("expected digits in the line. found none.")
+        abort()
+    }
+
+    return digits.first()! * 10 + digits.last()!
+}
+
+fn part1(lines: [String]) throws -> u64 {
+    mut sum = 0u64
+    for line in lines {
+        sum += parse_line(line)
+    }
+    return sum
+}
+
+fn part2(lines: [String]) throws -> u64 {
+    mut sum = 0u64
+    for line in lines {
+        sum += parse_line(
+            line: line.replace(
+                replace: "zero"
+                with: "z0o"
+            ).replace(
+                replace: "one"
+                with: "o1e"
+            ).replace(
+                replace: "two"
+                with: "t2o"
+            ).replace(
+                replace: "three"
+                with: "t3e"
+            ).replace(
+                replace: "four"
+                with: "f4r"
+            ).replace(
+                replace: "five"
+                with: "f5e"
+            ).replace(
+                replace: "six"
+                with: "s6x"
+            ).replace(
+                replace: "seven"
+                with: "s7n"
+            ).replace(
+                replace: "eight"
+                with: "e8t"
+            ).replace(
+                replace: "nine"
+                with: "n9e"
+            )
+        )
+    }
+    return sum
+}

@@ -1,0 +1,185 @@
+import utils { digits_to_number }
+
+comptime part1_expected_value() => 536202u64
+comptime part2_expected_value() => 78272573u64
+
+fn parse_input(lines: [String]) throws -> ([Number], [Symbol]) {
+    mut numbers: [Number] = []
+    mut symbols: [Symbol] = []
+    for row in 0..lines.size() {
+        mut line = lines[row]
+        mut digits: [u8] = []
+        for col in 0..line.length() {
+            let byte = line.byte_at(col)
+            match byte {
+                b'.' => {
+                    if not digits.is_empty() {
+                        numbers.push(Number(
+                            value: digits_to_number(digits)
+                            length: digits.size()
+                            end_index: Index(row, col: col - 1)
+                        ))
+                        digits.resize(0)
+                    }
+                }
+                b'0' | b'1' | b'2' | b'3' | b'4' | b'5' | b'6' | b'7' | b'8' | b'9' => {
+                    digits.push(byte - b'0')
+                }
+                else => {
+                    symbols.push(Symbol(value: byte, index: Index(row, col)))
+                    if not digits.is_empty() {
+                        numbers.push(Number(
+                            value: digits_to_number(digits)
+                            length: digits.size()
+                            end_index: Index(row, col: col - 1)
+                        ))
+                        digits.resize(0)
+                    }
+                }
+            }
+        }
+        if not digits.is_empty() {
+            numbers.push(Number(
+                value: digits_to_number(digits)
+                length: digits.size()
+                end_index: Index(row, col: line.length() - 1)
+            ))
+        }
+    }
+    return (numbers, symbols)
+}
+
+fn part1(lines: [String]) throws -> u64 {
+    let (numbers, symbols) = parse_input(lines)
+
+    mut part_numbers: [u64] = []
+    for number in numbers {
+        mut found_match = false
+        for index in number.indices_to_check(line_length: lines[0].length(), line_count: lines.size()) {
+            if index.equals_any_of(symbols) {
+                found_match = true
+                break
+            }
+        }
+        if found_match {
+            part_numbers.push(number.value)
+        }
+    }
+
+    mut sum = 0u64
+    for part_number in part_numbers {
+        sum += part_number
+    }
+    return sum
+}
+fn part2(lines: [String]) throws -> u64 {
+    let (numbers, symbols) = parse_input(lines)
+    mut sum = 0u64
+    for symbol in symbols {
+        guard symbol.value == b'*' else {
+            continue
+        }
+        mut hits: [u64:Number] = [:]
+        for index in symbol.indices_to_check(line_length: lines[0].length(), line_count: lines.size()) {
+            for number in numbers {
+                if number.hit_test(index) {
+                    hits.set(number.value, number)
+                }
+            }
+        }
+        if hits.size() == 2 {
+            let keys = hits.keys()
+            sum += hits[keys[0]].value * hits[keys[1]].value
+        }
+    }
+
+    return sum
+}
+
+trait AdjacencyList {
+    fn indices_to_check(this, line_length: usize, line_count: usize) throws -> [Index]
+}
+
+struct Number implements(AdjacencyList) {
+    value: u64
+    length: usize
+    end_index: Index
+    fn indices_to_check(this, line_length: usize, line_count: usize) throws -> [Index] {
+        let (row, col) = (.end_index.row, .end_index.col)
+        mut indices: [Index] = []
+        for i in 0..(.length + 2) {
+            if i > col + 1 {
+                continue
+            }
+            let col_to_check = (col + 1) - i
+            if row > 0 and col_to_check < line_count {
+                indices.push(Index(row: row - 1, col: col_to_check))
+            }
+            if row < line_count and col_to_check < line_count {
+                indices.push(Index(row: row + 1, col: col_to_check))
+            }
+        }
+        if col > 0 and col >= .length {
+            indices.push(Index(row, col: col - .length))
+        }
+        if col < line_count - 1 {
+            indices.push(Index(row, col: col + 1))
+        }
+
+        return indices
+    }
+    fn hit_test(this, anon index: Index) throws -> bool {
+        mut indices: [Index] = []
+        for i in 0...length {
+            indices.push(Index(row: .end_index.row, col: .end_index.col - i))
+        }
+        return index.equals_any_of(indices)
+    }
+}
+struct Symbol implements(AdjacencyList) {
+    value: u8
+    index: Index
+    fn indices_to_check(this, line_length: usize, line_count: usize) throws -> [Index] {
+        let (row, col) = (.index.row, .index.col)
+        mut indices: [Index] = []
+        if row > 0 {
+            indices.push(Index(row: row - 1, col: col - 1))
+            indices.push(Index(row: row - 1, col))
+            indices.push(Index(row: row - 1, col: col + 1))
+        }
+        if row < line_count {
+            indices.push(Index(row: row + 1, col: col - 1))
+            indices.push(Index(row: row + 1, col))
+            indices.push(Index(row: row + 1, col: col + 1))
+        }
+        indices.push(Index(row, col: col - 1))
+        indices.push(Index(row, col: col + 1))
+        return indices
+    }
+}
+struct Index implements(Equal<Index>) {
+    row: usize
+    col: usize
+
+    fn equals(this, anon other: Index) -> bool {
+        return .row == other.row and .col == other.col
+    }
+
+    fn equals_any_of(this, anon others: [Index]) -> bool {
+        for other in others {
+            if this == other {
+                return true
+            }
+        }
+        return false
+    }
+    fn equals_any_of(this, anon others: [Symbol]) -> bool {
+        for other in others {
+            if this == other.index {
+                return true
+            }
+        }
+        return false
+    }
+}
+

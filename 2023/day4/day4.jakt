@@ -1,0 +1,80 @@
+comptime part1_expected_value() => 22488u64
+comptime part2_expected_value() => 7013204u64
+
+fn part1(lines: [String]) throws -> u64 {
+    mut sum = 0u64
+    for line in lines {
+        sum += Card::from_line(line).grade()
+    }
+    return sum
+}
+fn part2(lines: [String]) throws -> u64 {
+    mut cards: [Card] = []
+    for line in lines {
+        cards.push(Card::from_line(line))
+    }
+
+    mut dict: [String:u64] = [:]
+    for card in cards {
+        dict.set(card.id, 1u64)
+    }
+
+    for i in 0..cards.size() {
+        let card = cards[i]
+        let num_wins = card.count_winning_numbers()
+        for _ in 0..(dict.get(card.id) ?? 0) {
+            for j in 0..num_wins {
+                let x = i + (j as! usize) + 1
+                dict.set(cards[x].id, (dict.get(cards[x].id) ?? 0) + 1)
+            }
+        }
+    }
+
+    mut sum = 0u64
+    for card in cards {
+        sum += dict[card.id]
+    }
+    return sum
+}
+
+struct Card {
+    id: String
+    winners: [String]
+    numbers: [String]
+
+    fn from_line(anon line: String) throws -> Card {
+        let subline = line.split(c':')
+        let winners_and_numbers = subline[1].split(c'|')
+        return Card(
+            id: subline[0].split(c' ')[1]
+            winners: winners_and_numbers[0].split(c' ')
+            numbers: winners_and_numbers[1].split(c' ')
+        )
+    }
+
+    fn grade(this) -> u64 {
+        mut score = 0u64
+
+        for number in .numbers {
+            if .winners.contains(number) {
+                if score == 0 {
+                    score++
+                } else {
+                    score *= 2
+                }
+            }
+        }
+
+        return score
+    }
+
+    fn count_winning_numbers(this) -> u64 {
+        mut count = 0u64
+        for number in .numbers {
+            if .winners.contains(number) {
+                count++
+            }
+        }
+        return count
+    }
+}

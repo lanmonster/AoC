@@ -1,0 +1,34 @@
+import day1::day1 as d1
+import day2::day2 as d2
+import day3::day3 as d3
+import day4::day4 as d4
+import utils { split }
+
+fn main(args: [String]) {
+    guard args.size() == 3 else {
+        eprintln("Must specify a day (1-25) and an valid filename without extension. ex: build/aoc 17 test2")
+        abort()
+    }
+
+    mut input_file = File::open_for_reading(format("./day{}/{}.txt", args[1], args[2]))
+    mut lines = split(input_file.read_all(), split_char: c'\n')
+
+    let (p1expected, p1result, p2expected, p2result) = match args[1] {
+        "1" => (d1::part1_expected_value(), d1::part1(lines), d1::part2_expected_value(), d1::part2(lines))
+        "2" => (d2::part1_expected_value(), d2::part1(lines), d2::part2_expected_value(), d2::part2(lines))
+        "3" => (d3::part1_expected_value(), d3::part1(lines), d3::part2_expected_value(), d3::part2(lines))
+        "4" => (d4::part1_expected_value(), d4::part1(lines), d4::part2_expected_value(), d4::part2(lines))
+        else => {eprintln("unrecognized arg: {}", args[1]); abort()}
+    }
+
+    if (p1result != p1expected) {
+        eprintln("wrong part1. expected: {}, got {}", p1expected, p1result)
+        abort()
+    }
+    if (p2result != p2expected) {
+        eprintln("wrong part2. expected: {}, got {}", p2expected, p2result)
+        abort()
+    }
+
+    println("part1 = {}, part2 = {}", p1result, p2result)
+}
