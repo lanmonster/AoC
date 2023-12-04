@@ -1,18 +1,12 @@
+import relative parent::utils { map_x, sum_by, sum_by_x }
+
 comptime part1_expected_value() => 22488u64
 comptime part2_expected_value() => 7013204u64
 
-fn part1(lines: [String]) throws -> u64 {
-    mut sum = 0u64
-    for line in lines {
-        sum += Card::from_line(line).grade()
-    }
-    return sum
-}
+fn part1(lines: [String]) throws -> u64 => sum_by_x(lines, &fn(item: String) throws => Card::from_line(item).grade())
+
 fn part2(lines: [String]) throws -> u64 {
-    mut cards: [Card] = []
-    for line in lines {
-        cards.push(Card::from_line(line))
-    }
+    mut cards: [Card] = map_x(lines, &fn(line: String) throws => Card::from_line(line))
 
     mut dict: [String:u64] = [:]
     for card in cards {
@@ -30,11 +24,7 @@ fn part2(lines: [String]) throws -> u64 {
         }
     }
 
-    mut sum = 0u64
-    for card in cards {
-        sum += dict[card.id]
-    }
-    return sum
+    return sum_by(cards, &fn[dict](item: Card) => dict[item.id])
 }
 
 struct Card {
@@ -68,13 +58,11 @@ struct Card {
         return score
     }
 
-    fn count_winning_numbers(this) -> u64 {
-        mut count = 0u64
-        for number in .numbers {
-            if .winners.contains(number) {
-                count++
-            }
+    fn count_winning_numbers(this) -> u64 => sum_by(
+        .numbers
+        &fn[this](item: String) -> u64 => match .winners.contains(item) {
+            true => 1u64
+            false => 0u64
         }
-        return count
-    }
+    )
 }

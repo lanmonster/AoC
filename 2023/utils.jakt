@@ -32,3 +32,58 @@ fn digits_to_number(anon digits: [u8]) -> u64 {
     }
     return result
 }
+
+fn sum_by<T>(anon ts: [T], anon cb: &fn(anon item: T) -> u64) -> u64 {
+    mut sum = 0u64
+    for t in ts {
+        sum += cb(item: t)
+    }
+    return sum
+}
+fn sum_by_x<T, U requires(Integral)>(anon ts: [T], anon cb: &fn(anon item: T) throws -> U) throws -> U {
+    mut sum = 0u64
+    for t in ts {
+        sum += cb(item: t)
+    }
+    return sum
+}
+
+fn sum<T requires(Integral)>(anon ts: [T]) -> i64 {
+    mut sum = 0i64
+    for t in ts {
+        sum += t
+    }
+    return sum
+}
+fn sum<T requires(Floating)>(anon ts: [T]) -> f64 {
+    mut sum = 0.0
+    for t in ts {
+        sum += t
+    }
+    return sum
+}
+
+fn map<T, U>(anon ts: [T], anon cb: &fn(anon item: T) -> U) -> [U] {
+    mut us: [U] = []
+    for t in ts {
+        us.push(cb(item: t))
+    }
+    return us
+}
+fn map_x<T, U>(anon ts: [T], anon cb: &fn(anon item: T) throws -> U) throws -> [U] {
+    mut us: [U] = []
+    for t in ts {
+        us.push(cb(item: t))
+    }
+    return us
+}
+
+
+fn first_by_x<T>(anon ts: [T], anon cb: &fn(anon item: T) throws -> bool) throws -> T? {
+    for t in ts {
+        if cb(item: t) {
+            return t
+        }
+    }
+    return None
+}

@@ -3,7 +3,6 @@
 NEW_DAY_NUM=$(find . -type d -name "day*" | wc -l | tr -d ' ' | awk '{print $1+1}')
 
 mkdir "day$NEW_DAY_NUM"
-ln -s utils.jakt "day$NEW_DAY_NUM/utils.jakt"
 touch "day$NEW_DAY_NUM/input.txt" "day$NEW_DAY_NUM/test.txt" "day$NEW_DAY_NUM/test2.txt"
 
 cat <<EOF >"day$NEW_DAY_NUM/day$NEW_DAY_NUM.jakt"
