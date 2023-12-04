@@ -1,4 +1,4 @@
-import utils { is_digit }
+import relative parent::utils { is_digit, sum_by_x }
 
 comptime part1_expected_value() => 55017u64
 comptime part2_expected_value() => 53539u64
@@ -20,50 +20,40 @@ fn parse_line(line: String) throws -> u64 {
     return digits.first()! * 10 + digits.last()!
 }
 
-fn part1(lines: [String]) throws -> u64 {
-    mut sum = 0u64
-    for line in lines {
-        sum += parse_line(line)
-    }
-    return sum
-}
+fn part1(lines: [String]) throws -> u64 =>
+    sum_by_x(lines, &fn(item: String) throws -> u64 => parse_line(line: item))
 
-fn part2(lines: [String]) throws -> u64 {
-    mut sum = 0u64
-    for line in lines {
-        sum += parse_line(
-            line: line.replace(
-                replace: "zero"
-                with: "z0o"
-            ).replace(
-                replace: "one"
-                with: "o1e"
-            ).replace(
-                replace: "two"
-                with: "t2o"
-            ).replace(
-                replace: "three"
-                with: "t3e"
-            ).replace(
-                replace: "four"
-                with: "f4r"
-            ).replace(
-                replace: "five"
-                with: "f5e"
-            ).replace(
-                replace: "six"
-                with: "s6x"
-            ).replace(
-                replace: "seven"
-                with: "s7n"
-            ).replace(
-                replace: "eight"
-                with: "e8t"
-            ).replace(
-                replace: "nine"
-                with: "n9e"
-            )
+fn part2(lines: [String]) throws -> u64 =>
+    sum_by_x(lines, &fn(item: String) throws -> u64 => parse_line(
+        line: item.replace(
+            replace: "zero"
+            with: "z0o"
+        ).replace(
+            replace: "one"
+            with: "o1e"
+        ).replace(
+            replace: "two"
+            with: "t2o"
+        ).replace(
+            replace: "three"
+            with: "t3e"
+        ).replace(
+            replace: "four"
+            with: "f4r"
+        ).replace(
+            replace: "five"
+            with: "f5e"
+        ).replace(
+            replace: "six"
+            with: "s6x"
+        ).replace(
+            replace: "seven"
+            with: "s7n"
+        ).replace(
+            replace: "eight"
+            with: "e8t"
+        ).replace(
+            replace: "nine"
+            with: "n9e"
         )
-    }
-    return sum
-}
+    ))

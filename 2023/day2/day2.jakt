@@ -1,26 +1,20 @@
-import utils { is_digit }
+import relative parent::utils { digits_to_number, is_digit, map_x, sum_by_x }
 
 // TODO implement checked unary operator negate in comptime
 comptime part1_expected_value() => 2551u64
 comptime part2_expected_value() => 62811u64
 
-fn part1(lines: [String]) throws -> u64 {
-    mut sum = 0u64
-    for line in lines {
-        let game = Game::from_line(line)
-        if game.is_possible(reds: 12, greens: 13, blues: 14) {
-            sum += game.id
+fn part1(lines: [String]) throws -> u64 =>
+    sum_by_x(
+        map_x(lines, &fn(item: String) throws -> Game => Game::from_line(line: item))
+        &fn(item: Game) throws -> u64 => match item.is_possible(reds: 12, greens: 13, blues: 14) {
+            true => item.id
+            false => 0
         }
-    }
-    return sum
-}
-fn part2(lines: [String]) throws -> u64 {
-    mut sum = 0u64
-    for line in lines {
-        sum += Game::from_line(line).power()
-    }
-    return sum
-}
+    )
+
+fn part2(lines: [String]) throws -> u64 =>
+    sum_by_x(lines, &fn(item: String) throws -> u64 => Game::from_line(line: item).power())
 
 struct Game {
     id: u64
@@ -116,18 +110,4 @@ struct Subset {
     reds: u64
     greens: u64
     blues: u64
-}
-
-fn digits_to_number(anon digits: [u8]) -> u64 {
-    if digits.is_empty() {
-        return 0
-    }
-    mut result = 0u64
-    mut magnitude = 1u64
-    for i in digits.size()..0 {
-        let digit = digits[i - 1]
-        result += ((digit as! u64) * magnitude) as! u64
-        magnitude *= 10
-    }
-    return result
 }

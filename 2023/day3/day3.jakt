@@ -1,4 +1,4 @@
-import utils { digits_to_number }
+import relative parent::utils { digits_to_number, first_by_x, sum_by_x }
 
 comptime part1_expected_value() => 536202u64
 comptime part2_expected_value() => 78272573u64
@@ -51,49 +51,47 @@ fn parse_input(lines: [String]) throws -> ([Number], [Symbol]) {
 
 fn part1(lines: [String]) throws -> u64 {
     let (numbers, symbols) = parse_input(lines)
-
-    mut part_numbers: [u64] = []
-    for number in numbers {
+    return sum_by_x(numbers, &fn[lines, symbols](item: Number) throws -> u64 {
         mut found_match = false
-        for index in number.indices_to_check(line_length: lines[0].length(), line_count: lines.size()) {
+
+        first_by_x(
+            item.indices_to_check(line_length: lines[0].length(), line_count: lines.size())
+            &fn[symbols](item: Index) throws -> bool => item.equals_any_of(symbols)
+        )
+
+        for index in item.indices_to_check(line_length: lines[0].length(), line_count: lines.size()) {
             if index.equals_any_of(symbols) {
                 found_match = true
                 break
             }
         }
-        if found_match {
-            part_numbers.push(number.value)
+        return match found_match {
+            true => item.value
+            else => 0
         }
-    }
-
-    mut sum = 0u64
-    for part_number in part_numbers {
-        sum += part_number
-    }
-    return sum
+    })
 }
 fn part2(lines: [String]) throws -> u64 {
     let (numbers, symbols) = parse_input(lines)
-    mut sum = 0u64
-    for symbol in symbols {
-        guard symbol.value == b'*' else {
-            continue
+    return sum_by_x(symbols, &fn[lines, numbers](item: Symbol) throws -> u64 {
+        guard item.value == b'*' else {
+            return 0
         }
         mut hits: [u64:Number] = [:]
-        for index in symbol.indices_to_check(line_length: lines[0].length(), line_count: lines.size()) {
+        for index in item.indices_to_check(line_length: lines[0].length(), line_count: lines.size()) {
             for number in numbers {
                 if number.hit_test(index) {
                     hits.set(number.value, number)
                 }
             }
         }
-        if hits.size() == 2 {
-            let keys = hits.keys()
-            sum += hits[keys[0]].value * hits[keys[1]].value
-        }
-    }
 
-    return sum
+        let keys = hits.keys()
+        return match hits.size() {
+            2 => hits[keys[0]].value * hits[keys[1]].value
+            else => 0
+        }
+    })
 }
 
 trait AdjacencyList {
