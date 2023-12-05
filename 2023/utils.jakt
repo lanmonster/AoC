@@ -11,6 +11,25 @@ fn is_digit(anon c: u8) -> bool {
     }
 }
 
+fn as_u64(anon str: String) throws -> u64 {
+    mut digits: [u8] = []
+
+    for i in 0..str.length() {
+        digits.push(str.byte_at(i) - b'0')
+    }
+
+    return digits_to_unsigned_number(digits)
+}
+fn as_i64(anon str: String) throws -> i64 {
+    mut digits: [u8] = []
+
+    for i in 0..str.length() {
+        digits.push(str.byte_at(i) - b'0')
+    }
+
+    return digits_to_signed_number(digits)
+}
+
 fn split(anon bytes: [u8], split_char: c_char) throws -> [String] {
     mut sb = StringBuilder::create()
     for b in bytes { sb.append(b) }
@@ -19,7 +38,7 @@ fn split(anon bytes: [u8], split_char: c_char) throws -> [String] {
 
 fn get(anon strs: [String], anon at: (usize, usize)) -> u8 => strs[at.0].byte_at(at.1)
 
-fn digits_to_number(anon digits: [u8]) -> u64 {
+fn digits_to_unsigned_number(anon digits: [u8]) -> u64 {
     if digits.is_empty() {
         return 0
     }
@@ -28,6 +47,19 @@ fn digits_to_number(anon digits: [u8]) -> u64 {
     for i in digits.size()..0 {
         let digit = digits[i - 1]
         result += ((digit as! u64) * magnitude) as! u64
+        magnitude *= 10
+    }
+    return result
+}
+fn digits_to_signed_number(anon digits: [u8]) -> i64 {
+    if digits.is_empty() {
+        return 0
+    }
+    mut result = 0i64
+    mut magnitude = 1i64
+    for i in digits.size()..0 {
+        let digit = digits[i - 1]
+        result += ((digit as! i64) * magnitude) as! i64
         magnitude *= 10
     }
     return result
@@ -63,7 +95,7 @@ fn sum<T requires(Floating)>(anon ts: [T]) -> f64 {
     return sum
 }
 
-fn map<T, U>(anon ts: [T], anon cb: &fn(anon item: T) -> U) -> [U] {
+fn map<T, U>(anon ts: [T], anon cb: &fn(anon item: T) -> U) throws -> [U] {
     mut us: [U] = []
     for t in ts {
         us.push(cb(item: t))
@@ -78,7 +110,6 @@ fn map_x<T, U>(anon ts: [T], anon cb: &fn(anon item: T) throws -> U) throws -> [
     return us
 }
 
-
 fn first_by_x<T>(anon ts: [T], anon cb: &fn(anon item: T) throws -> bool) throws -> T? {
     for t in ts {
         if cb(item: t) {
@@ -87,3 +118,63 @@ fn first_by_x<T>(anon ts: [T], anon cb: &fn(anon item: T) throws -> bool) throws
     }
     return None
 }
+
+fn min<T requires(Integral)>(anon ts: [T]) throws -> T {
+    if ts.is_empty() {
+        throw Error::from_string_literal("Cannot return the min from an empty array!")
+    }
+    mut lowest = ts[0]
+    for i in 1..ts.size() {
+        if ts[i] < lowest {
+            lowest = ts[i]
+        }
+    }
+    return lowest
+}
+fn min_by<T>(anon ts: [T], anon cb: &fn(lowest: T, item: T) -> bool) throws -> T {
+    if ts.is_empty() {
+        throw Error::from_string_literal("Cannot return the min from an empty array!")
+    }
+    mut lowest = ts[0]
+    for i in 1..ts.size() {
+        if cb(lowest, item: ts[i]) {
+            lowest = ts[i]
+        }
+    }
+    return lowest
+}
+
+
+fn max<T requires(Integral)>(anon ts: [T]) throws -> T {
+    if ts.is_empty() {
+        throw Error::from_string_literal("Cannot return the max from an empty array!")
+    }
+    mut highest = ts[0]
+    for i in 1..ts.size() {
+        if ts[i] > highest {
+            highest = ts[i]
+        }
+    }
+    return highest
+}
+
+fn drop_by<T>(anon ts: [T], anon cb: &fn(anon item: T) -> bool) throws -> [T] {
+    mut new_ts: [T] = []
+    for t in ts {
+        if not cb(item: t) {
+            new_ts.push(t)
+        }
+    }
+    return new_ts
+}
+fn drop_by_x<T>(anon ts: [T], anon cb: &fn(anon item: T) throws -> bool) throws -> [T] {
+    mut new_ts: [T] = []
+    for t in ts {
+        if not cb(item: t) {
+            new_ts.push(t)
+        }
+    }
+    return new_ts
+}
+
+fn make_array<T>() throws -> [T] => [] // not sure why this could not just be inlined

@@ -1,4 +1,4 @@
-import relative parent::utils { digits_to_number, first_by_x, sum_by_x }
+import relative parent::utils { digits_to_unsigned_number, sum_by_x }
 
 comptime part1_expected_value() => 536202u64
 comptime part2_expected_value() => 78272573u64
@@ -15,7 +15,7 @@ fn parse_input(lines: [String]) throws -> ([Number], [Symbol]) {
                 b'.' => {
                     if not digits.is_empty() {
                         numbers.push(Number(
-                            value: digits_to_number(digits)
+                            value: digits_to_unsigned_number(digits)
                             length: digits.size()
                             end_index: Index(row, col: col - 1)
                         ))
@@ -29,7 +29,7 @@ fn parse_input(lines: [String]) throws -> ([Number], [Symbol]) {
                     symbols.push(Symbol(value: byte, index: Index(row, col)))
                     if not digits.is_empty() {
                         numbers.push(Number(
-                            value: digits_to_number(digits)
+                            value: digits_to_unsigned_number(digits)
                             length: digits.size()
                             end_index: Index(row, col: col - 1)
                         ))
@@ -40,7 +40,7 @@ fn parse_input(lines: [String]) throws -> ([Number], [Symbol]) {
         }
         if not digits.is_empty() {
             numbers.push(Number(
-                value: digits_to_number(digits)
+                value: digits_to_unsigned_number(digits)
                 length: digits.size()
                 end_index: Index(row, col: line.length() - 1)
             ))
@@ -53,12 +53,6 @@ fn part1(lines: [String]) throws -> u64 {
     let (numbers, symbols) = parse_input(lines)
     return sum_by_x(numbers, &fn[lines, symbols](item: Number) throws -> u64 {
         mut found_match = false
-
-        first_by_x(
-            item.indices_to_check(line_length: lines[0].length(), line_count: lines.size())
-            &fn[symbols](item: Index) throws -> bool => item.equals_any_of(symbols)
-        )
-
         for index in item.indices_to_check(line_length: lines[0].length(), line_count: lines.size()) {
             if index.equals_any_of(symbols) {
                 found_match = true

@@ -1,0 +1,138 @@
+import relative parent::utils { as_u64, drop_by, is_digit, make_array, map, map_x, max, min, min_by }
+
+comptime part1_expected_value() => 278755257u64
+comptime part2_expected_value() => 26829166u64
+
+fn part1(lines: [String]) throws -> u64 {
+    mut seeds = parse_seeds(line: lines[0])
+    let blocks = map_x(
+        parse_blocks(lines: lines[1..].to_array())
+        &fn(item: [String]) throws -> [MapRange] => map_x(
+            item
+            &fn(item: String) throws => MapRange::from_line(item)
+        )
+    )
+
+    for ranges in blocks {
+        seeds = map(seeds, &fn[&ranges](item: u64) -> u64 {
+            for range in ranges {
+                if range.includes(item) {
+                    return range.map(item)
+                }
+            }
+            return item
+        })
+    }
+
+    return min(seeds)
+}
+fn part2(lines: [String]) throws -> u64 {
+    mut seed_ranges = parse_seed_ranges(line: lines[0])
+    let blocks = parse_blocks(lines: lines[1..].to_array())
+    for block in blocks {
+        let ranges = map_x(
+            block
+            &fn(item: String) throws => MapRange::from_line(item)
+        )
+        mut new_seed_ranges: [SeedRange] = []
+        while not seed_ranges.is_empty() {
+            let seed_range = seed_ranges.pop()!
+            mut in_range = false
+            for range in ranges {
+                if range.intersection(seed_range) is Some(overlap) {
+                    let (lhs, middle, rhs) = overlap
+                    new_seed_ranges.push(middle)
+                    if lhs.has_value() {
+                        seed_ranges.push(lhs!)
+                    }
+                    if rhs.has_value() {
+                        seed_ranges.push(rhs!)
+                    }
+                    in_range = true
+                    break
+                }
+            }
+            if not in_range {
+                new_seed_ranges.push(seed_range)
+            }
+        }
+        seed_ranges = new_seed_ranges
+    }
+    return min_by(
+        seed_ranges
+        &fn(lowest: SeedRange, item: SeedRange) -> bool => item.start < lowest.start
+    ).start
+}
+
+fn parse_seeds(line: String) throws -> [u64] =>
+    map_x(
+        line.split(c':')[1].split(c' ')
+        &fn(item: String) throws -> u64 => as_u64(item)
+    )
+fn parse_seed_ranges(line: String) throws -> [SeedRange] {
+    mut ranges: [SeedRange] = []
+    mut numbers = parse_seeds(line)
+    mut start: u64? = None
+    for number in numbers {
+        if start is Some(val) {
+            ranges.push(SeedRange(start: val, end: val + number))
+            start = None
+            continue
+        }
+        start = number
+    }
+    return ranges
+}
+
+fn parse_blocks(lines: [String]) throws -> [[String]] {
+    mut blocks: [[String]] = []
+    for line in lines {
+        if not is_digit(line.byte_at(0)) {
+            blocks.push(make_array<String>())
+            continue
+        }
+        blocks.last()!.push(line) // ? makes the compiler crash
+    }
+    return blocks
+}
+
+struct MapRange {
+    source: u64
+    destination: u64
+    length: u64
+    private fn end(this) -> u64 => .source + .length
+
+    fn from_line(anon line: String) throws -> MapRange {
+        let parts = map_x(line.split(c' '), &fn(item: String) throws => as_u64(item))
+        return MapRange(
+            source: parts[1]
+            destination: parts[0]
+            length: parts[2]
+        )
+    }
+
+    fn includes(this, anon value: u64) -> bool => value >= .source and value < .end()
+    fn intersection(this, anon value: SeedRange) throws -> (SeedRange?, SeedRange, SeedRange?)? {
+        let start = max([value.start, .source])
+        let end = min([value.end, .end()])
+        if start >= end {
+            return None
+        }
+        let lhs = match start > value.start {
+            true => Some(SeedRange(start: value.start, end: start))
+            false => None
+        }
+        let rhs = match value.end > end {
+            true => Some(SeedRange(start: end, end: value.end))
+            false => None
+        }
+
+        return Some((lhs, SeedRange(start: .map(start), end: .map(end)), rhs))
+    }
+    fn map(this, anon value: u64) -> u64 => (value + .destination) - .source
+}
+
+struct SeedRange {
+    start: u64
+    end: u64
+}
