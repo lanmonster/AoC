@@ -3,9 +3,13 @@
 NEW_DAY_NUM=$(find . -type d -name "day*" | wc -l | tr -d ' ' | awk '{print $1+1}')
 
 mkdir "day$NEW_DAY_NUM"
-touch "day$NEW_DAY_NUM/input.txt" "day$NEW_DAY_NUM/test.txt" "day$NEW_DAY_NUM/test2.txt"
+
+curl "https://adventofcode.com/$(date +%Y)/day/$NEW_DAY_NUM/input" --cookie "session=$AOC_SESSION" -o "day$NEW_DAY_NUM/input.txt"
+touch "day$NEW_DAY_NUM/test.txt" "day$NEW_DAY_NUM/test2.txt"
 
 cat <<EOF >"day$NEW_DAY_NUM/day$NEW_DAY_NUM.jakt"
+import relative parent::utils as utils
+
 comptime part1_expected_value() => 0u64
 comptime part2_expected_value() => 0u64
 

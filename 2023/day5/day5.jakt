@@ -1,0 +1,164 @@
+import relative parent::utils { as_u64, is_digit, map, map_x, min }
+
+comptime part1_expected_value() => 278755257u64
+comptime part2_expected_value() => 0u64
+
+fn part1(lines: [String]) throws -> u64 {
+    let seeds = parse_seeds(line: lines[0])
+    let maps = init_maps<u64>(lines)
+    let locations = map(
+        seeds
+        &fn[&maps](item: u64) -> u64 {
+            let soil = find_in_ranges<u64>(maps.seed_to_soil, value: item)
+            let fertilizer = find_in_ranges<u64>(maps.soil_to_fertilizer, value: soil)
+            let water = find_in_ranges<u64>(maps.fertilizer_to_water, value: fertilizer)
+            let light = find_in_ranges<u64>(maps.water_to_light, value: water)
+            let temp = find_in_ranges<u64>(maps.light_to_temp, value: light)
+            let humidity = find_in_ranges<u64>(maps.temp_to_humidity, value: temp)
+            let location = find_in_ranges<u64>(maps.humidity_to_location, value: humidity)
+            return location
+        }
+    )
+    return min(locations)
+}
+fn part2(lines: [String]) throws -> u64 {
+    let seeds = parse_seed_ranges(line: lines[0])
+    println("{}", seeds)
+    let maps = init_maps<u64>(lines)
+    let locations = map_x(
+        seeds
+        &fn[&maps](item: XRange<u64>) throws -> u64 {
+            mut locations: [u64] = []
+            for i in (item.start..item.end).inclusive() {
+                let soil = find_in_ranges<u64>(maps.seed_to_soil, value: i)
+                let fertilizer = find_in_ranges<u64>(maps.soil_to_fertilizer, value: soil)
+                let water = find_in_ranges<u64>(maps.fertilizer_to_water, value: fertilizer)
+                let light = find_in_ranges<u64>(maps.water_to_light, value: water)
+                let temp = find_in_ranges<u64>(maps.light_to_temp, value: light)
+                let humidity = find_in_ranges<u64>(maps.temp_to_humidity, value: temp)
+                let location = find_in_ranges<u64>(maps.humidity_to_location, value: humidity)
+                locations.push(location)
+            }
+            return min(locations)
+        }
+    )
+    return min(locations)
+}
+
+fn init_maps<T requires(Integral)>(lines: [String]) -> Maps<T> {
+    mut start = 1
+    mut i = 2
+    while is_digit(lines[i].byte_at(0)) {
+        i++
+    }
+    let seed_to_soil = try parse_ranges(lines: lines[start..i])
+    start = ++i
+    while is_digit(lines[i].byte_at(0)) {
+        i++
+    }
+    let soil_to_fertilizer = try parse_ranges(lines: lines[(start - 1)..i])
+    start = ++i
+    while is_digit(lines[i].byte_at(0)) {
+        i++
+    }
+    let fertilizer_to_water = try parse_ranges(lines: lines[(start - 1)..i])
+    start = ++i
+    while is_digit(lines[i].byte_at(0)) {
+        i++
+    }
+    let water_to_light = try parse_ranges(lines: lines[(start - 1)..i])
+    start = ++i
+    while is_digit(lines[i].byte_at(0)) {
+        i++
+    }
+    let light_to_temp = try parse_ranges(lines: lines[(start - 1)..i])
+    start = ++i
+    while is_digit(lines[i].byte_at(0)) {
+        i++
+    }
+    let temp_to_humidity = try parse_ranges(lines: lines[(start - 1)..i])
+    let humidity_to_location = try parse_ranges(lines: lines[i..])
+    return Maps(
+        seed_to_soil: seed_to_soil!
+        soil_to_fertilizer: soil_to_fertilizer!
+        fertilizer_to_water: fertilizer_to_water!
+        water_to_light: water_to_light!
+        light_to_temp: light_to_temp!
+        temp_to_humidity: temp_to_humidity!
+        humidity_to_location: humidity_to_location!
+    )
+}
+
+struct Maps<T requires(Integral)> {
+    seed_to_soil: [(XRange<T>, XRange<T>)]
+    soil_to_fertilizer: [(XRange<T>, XRange<T>)]
+    fertilizer_to_water: [(XRange<T>, XRange<T>)]
+    water_to_light: [(XRange<T>, XRange<T>)]
+    light_to_temp: [(XRange<T>, XRange<T>)]
+    temp_to_humidity: [(XRange<T>, XRange<T>)]
+    humidity_to_location: [(XRange<T>, XRange<T>)]
+}
+
+struct XRange<T requires(Integral)> {
+    start: T
+    end: T
+}
+fn range_includes<T requires(Integral)>(anon range: XRange<T>, value: T) -> bool {
+    return value >= range.start and value < range.end
+}
+fn find_in_ranges<T requires(Integral)>(anon ranges: [(XRange<T>, XRange<T>)], value: T) -> T {
+    for (src, dest) in ranges {
+        if range_includes(src, value) {
+            return value + dest.start - src.start
+        }
+    }
+    return value
+}
+
+fn parse_seeds(line: String) throws -> [u64] {
+    mut seeds: [String] = []
+    let split_line = line.split(c':')
+    guard split_line[0] == "seeds" else {
+        eprintln("Expected line to start with \"seeds:\"")
+        abort()
+    }
+    return map_x(split_line[1].split(c' '), &fn(item: String) throws -> u64 => as_u64(item))
+}
+fn parse_seed_ranges(line: String) throws -> [XRange<u64>] {
+    mut seeds: [String] = []
+    let split_line = line.split(c':')
+    guard split_line[0] == "seeds" else {
+        eprintln("Expected line to start with \"seeds:\"")
+        abort()
+    }
+    mut start: u64? = None
+    let nums = map_x(split_line[1].split(c' '), &fn(item: String) throws -> u64 => as_u64(item))
+    mut results: [XRange<u64>] = []
+    for num in nums {
+        if not start.has_value() {
+            start = num
+            continue
+        }
+        results.push(XRange(start: start!, end: start! + num - 1))
+        start = None
+    }
+    return results
+}
+
+fn parse_ranges(lines: ArraySlice<String>) throws -> [(XRange<u64>, XRange<u64>)] {
+    mut ranges: [(XRange<u64>, XRange<u64>)] = []
+    guard lines[0].ends_with(":") else {
+        eprintln("Expected first line to end with :. got {}", lines[0])
+        abort()
+    }
+    for i in 1..lines.size() {
+        let line = lines[i]
+        let parts = line.split(c' ')
+        let dest = as_u64(parts[0])
+        let src = as_u64(parts[1])
+        let length = as_u64(parts[2])
+
+        ranges.push((XRange(start: src, end: src + length), XRange(start: dest, end: dest + length)))
+    }
+    return ranges
+}

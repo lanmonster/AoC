@@ -11,6 +11,16 @@ fn is_digit(anon c: u8) -> bool {
     }
 }
 
+fn as_u64(anon str: String) throws -> u64 {
+    mut digits: [u8] = []
+
+    for i in 0..str.length() {
+        digits.push(str.byte_at(i) - b'0')
+    }
+
+    return digits_to_number(digits)
+}
+
 fn split(anon bytes: [u8], split_char: c_char) throws -> [String] {
     mut sb = StringBuilder::create()
     for b in bytes { sb.append(b) }
@@ -63,7 +73,7 @@ fn sum<T requires(Floating)>(anon ts: [T]) -> f64 {
     return sum
 }
 
-fn map<T, U>(anon ts: [T], anon cb: &fn(anon item: T) -> U) -> [U] {
+fn map<T, U>(anon ts: [T], anon cb: &fn(anon item: T) -> U) throws -> [U] {
     mut us: [U] = []
     for t in ts {
         us.push(cb(item: t))
@@ -78,7 +88,6 @@ fn map_x<T, U>(anon ts: [T], anon cb: &fn(anon item: T) throws -> U) throws -> [
     return us
 }
 
-
 fn first_by_x<T>(anon ts: [T], anon cb: &fn(anon item: T) throws -> bool) throws -> T? {
     for t in ts {
         if cb(item: t) {
@@ -87,3 +96,29 @@ fn first_by_x<T>(anon ts: [T], anon cb: &fn(anon item: T) throws -> bool) throws
     }
     return None
 }
+
+fn min<T requires(Integral)>(anon ts: [T]) throws -> T {
+    if ts.is_empty() {
+        throw Error::from_string_literal("Cannot return the min from an empty array!")
+    }
+    mut lowest = ts[0]
+    for i in 1..ts.size() {
+        if ts[i] < lowest {
+            lowest = ts[i]
+        }
+    }
+    return lowest
+}
+fn max<T requires(Integral)>(anon ts: [T]) throws -> T {
+    if ts.is_empty() {
+        throw Error::from_string_literal("Cannot return the max from an empty array!")
+    }
+    mut highest = ts[0]
+    for i in 1..ts.size() {
+        if ts[i] > highest {
+            highest = ts[i]
+        }
+    }
+    return highest
+}
+
