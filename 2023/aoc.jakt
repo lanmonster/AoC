@@ -11,6 +11,7 @@ fn main(args: [String]) {
         eprintln("Must specify a day (1-25) and an valid filename without extension. ex: build/aoc 17 test2")
         abort()
     }
+    println("Day {}", args[1])
 
     mut input_file = try File::open_for_reading(format("./day{}/{}.txt", args[1], args[2])) catch {
         eprintln("could not find ./day{}/{}.txt", args[1], args[2])
@@ -30,10 +31,11 @@ fn main(args: [String]) {
 
     if (p1result != p1expected) {
         eprintln("wrong part1. expected: {}, got {}", p1expected, p1result)
+        return 1
     }
     if (p2result != p2expected) {
         eprintln("wrong part2. expected: {}, got {}", p2expected, p2result)
+        return 1
     }
-    println("Day {}", args[1])
     println("part1 = {}, part2 = {}", p1result, p2result)
 }

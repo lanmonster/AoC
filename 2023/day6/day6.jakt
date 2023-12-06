@@ -6,8 +6,8 @@ comptime part2_expected_value() => 23632299u64
 fn part1(lines: [String]) throws -> u64 =>
     product(
         zip(
-            map(lines[0].substring(start: 13, length: lines[0].length() - 13).split(c' '), &fn(item: String) => as_u64(item))
-            map(lines[1].substring(start: 13, length: lines[0].length() - 13).split(c' '), &fn(item: String) => as_u64(item))
+            map(lines[0].substring(start: 11, length: lines[0].length() - 11).split(c' '), &fn(item: String) => as_u64(item))
+            map(lines[1].substring(start: 11, length: lines[0].length() - 11).split(c' '), &fn(item: String) => as_u64(item))
             &fn(a: u64, b: u64) => winning_strategies(duration: a, distance: b)
         )
     )
