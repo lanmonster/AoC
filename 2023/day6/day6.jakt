@@ -1,0 +1,29 @@
+import relative parent::utils { as_u64, as_u64_ignoring_space, map, product, zip }
+
+comptime part1_expected_value() => 505494u64
+comptime part2_expected_value() => 23632299u64
+
+fn part1(lines: [String]) throws -> u64 =>
+    product(
+        zip(
+            map(lines[0].substring(start: 13, length: lines[0].length() - 13).split(c' '), &fn(item: String) => as_u64(item))
+            map(lines[1].substring(start: 13, length: lines[0].length() - 13).split(c' '), &fn(item: String) => as_u64(item))
+            &fn(a: u64, b: u64) => winning_strategies(duration: a, distance: b)
+        )
+    )
+
+fn part2(lines: [String]) throws -> u64 =>
+    winning_strategies(
+        duration: as_u64_ignoring_space(lines[0].split(c':')[1])
+        distance: as_u64_ignoring_space(lines[1].split(c':')[1])
+    )
+
+fn winning_strategies(duration: u64, distance: u64) -> u64 {
+    mut count = 0u64
+    for i in (..duration).inclusive() {
+        if i * (duration - i) > distance {
+            count++
+        }
+    }
+    return count
+}

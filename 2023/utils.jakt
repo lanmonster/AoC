@@ -11,23 +11,44 @@ fn is_digit(anon c: u8) -> bool {
     }
 }
 
-fn as_u64(anon str: String) throws -> u64 {
-    mut digits: [u8] = []
-
+fn as_u64(anon str: String) -> u64 => parse_int<u64>(str)
+fn parse_ints<T requires(Integral)>(anon str: String) throws -> [T] {
+    mut results: [T] = []
+    mut result: T? = 0
     for i in 0..str.length() {
-        digits.push(str.byte_at(i) - b'0')
+        let byte = str.byte_at(i)
+        if byte == b' ' {
+            if result.has_value() {
+                results.push(result!)
+                result = None
+            }
+            continue
+        }
+        let value = (byte - b'0') as! T
+        result = (result ?? 0) * 10 + value
     }
-
-    return digits_to_unsigned_number(digits)
+    return results
 }
-fn as_i64(anon str: String) throws -> i64 {
-    mut digits: [u8] = []
-
+fn parse_int<T requires(Integral)>(anon str: String) -> T {
+    mut result: T = 0
     for i in 0..str.length() {
-        digits.push(str.byte_at(i) - b'0')
+        let byte = str.byte_at(i)
+        let value: T = (byte - b'0')
+        result = result * 10 + value
     }
-
-    return digits_to_signed_number(digits)
+    return result
+}
+fn as_u64_ignoring_space(anon str: String) -> u64 {
+    mut result = 0u64
+    for i in 0..str.length() {
+        let byte = str.byte_at(i)
+        if byte == b' ' {
+            continue
+        }
+        let value = (byte - b'0') as! u64
+        result = result * 10 + value
+    }
+    return result
 }
 
 fn split(anon bytes: [u8], split_char: c_char) throws -> [String] {
@@ -178,3 +199,32 @@ fn drop_by_x<T>(anon ts: [T], anon cb: &fn(anon item: T) throws -> bool) throws 
 }
 
 fn make_array<T>() throws -> [T] => [] // not sure why this could not just be inlined
+
+fn zip<T, U>(anon xs: [T], anon ys: [T], anon cb: &fn(a: T, b: T) -> U) throws -> [U] {
+    guard xs.size() == ys.size() else {
+        throw Error::from_string_literal("inputs to zip must have the same length")
+    }
+    mut zs: [U] = []
+    for i in 0..xs.size() {
+        zs.push(cb(a: xs[i], b: ys[i]))
+    }
+    return zs
+}
+
+fn count_if<T>(anon ts: [T], anon cb: &fn(item: T) -> bool) -> u64 {
+    mut count = 0u64
+    for t in ts {
+        if cb(item: t) {
+            count++
+        }
+    }
+    return count
+}
+
+fn product<T requires(Integral)>(anon ts: [T]) -> T {
+    mut result: T = 1
+    for t in ts {
+        result *= t
+    }
+    return result
+}
