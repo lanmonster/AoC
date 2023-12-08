@@ -341,11 +341,10 @@ fn join_bytes(anon ts: [u8], separator: String = "") throws -> String {
     return sb.to_string()
 }
 
-fn everyx<T>(anon ts: [T], anon cb: &fn(item: T) throws -> bool) throws -> bool {
-    for t in ts {
-        if not cb(item: t) {
-            return false
-        }
+fn gcd<T requires(Integral)>(anon a: T, anon b: T) -> T {
+    if b == 0 {
+        return a
     }
-    return true
+
+    return gcd(b, a % b)
 }
