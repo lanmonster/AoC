@@ -21,7 +21,8 @@ cleanup() {
 tput civis
 trap cleanup EXIT
 
-jakt aoc.jakt && clear
+jakt aoc.jakt || exit 1
+clear
 
 if [ -n "$1" ]
 then

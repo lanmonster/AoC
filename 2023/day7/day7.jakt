@@ -1,4 +1,4 @@
-import relative parent::utils { as_set, char_counts, count_if, dict_values, join, map_x, max, parse_int, sortx_by_in_place, sumx_by_with_key }
+import relative parent::utils { as_set, char_counts, count_if, dict_values, map_x, max, parse_int, sortx_by_in_place, sumx_by_with_key }
 
 comptime part1_expected_value() => 241344943u64
 comptime part2_expected_value() => 243101568u64
