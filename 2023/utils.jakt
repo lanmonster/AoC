@@ -100,6 +100,13 @@ fn sum_by_x<T, U requires(Integral)>(anon ts: [T], anon cb: &fn(anon item: T) th
     }
     return sum
 }
+fn sumx_by_with_key<T, U requires(Integral)>(anon ts: [T], anon cb: &fn(anon item: T, anon i: usize) throws -> U) throws -> U {
+    mut sum = 0u64
+    for i in 0..ts.size() {
+        sum += cb(item: ts[i], i)
+    }
+    return sum
+}
 
 fn sum<T requires(Integral)>(anon ts: [T]) -> i64 {
     mut sum = 0i64
@@ -178,6 +185,18 @@ fn max<T requires(Integral)>(anon ts: [T]) throws -> T {
     }
     return highest
 }
+fn max_by<T requires(Integral)>(anon ts: [T], anon cb: &fn(highest: T, item: T) -> bool) throws -> T {
+    if ts.is_empty() {
+        throw Error::from_string_literal("Cannot return the max from an empty array!")
+    }
+    mut highest = ts[0]
+    for i in 1..ts.size() {
+        if cb(highest, item: ts[i]) {
+            highest = ts[i]
+        }
+    }
+    return highest
+}
 
 fn drop_by<T>(anon ts: [T], anon cb: &fn(anon item: T) -> bool) throws -> [T] {
     mut new_ts: [T] = []
@@ -227,4 +246,60 @@ fn product<T requires(Integral)>(anon ts: [T]) -> T {
         result *= t
     }
     return result
+}
+
+fn dict_values<K, V>(anon dict: [K:V]) throws -> [V] {
+    mut vs: [V] = []
+    for (_, v) in dict {
+        vs.push(v)
+    }
+    return vs
+}
+
+fn sortx_by_in_place<T>(anon ts: &mut [T], anon cb: &fn(a: T, b: T) throws -> bool) throws {
+    for i in 0..(ts.size() - 1) {
+        for j in 0..(ts.size() - 1) {
+            let next = j + 1
+            if cb(a: ts[j], b: ts[next]) {
+                let temp = ts[j]
+                ts[j] = ts[next]
+                ts[next] = temp
+            }
+        }
+    }
+}
+fn swap<T>(anon ts: &mut [T], anon a: usize, anon b: usize) {
+    let temp = ts[a]
+    ts[a] = ts[b]
+    ts[b] = temp
+}
+
+fn char_counts<T requires(Integral)>(anon str: String) throws -> [c_char:T] {
+    mut seen: [c_char:T] = [:]
+    for i in 0..str.length() {
+        let byte = str.byte_at(i) as! c_char
+        seen.set(byte, (seen.get(byte) ?? 0) + 1)
+    }
+    return seen
+}
+
+fn as_set<T>(anon ts: [T]) throws -> {T} {
+    mut t_set: {T} = {}
+    for t in ts {
+        t_set.add(t)
+    }
+    return t_set
+}
+
+fn join(anon ts: [u8], separator: String = "") throws -> String {
+    mut sb = StringBuilder::create()
+    mut first = true
+    for t in ts {
+        if not first {
+            sb.append(separator)
+        }
+        sb.append(t)
+        first = false
+    }
+    return sb.to_string()
 }

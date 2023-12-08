@@ -1,0 +1,252 @@
+import relative parent::utils { as_set, char_counts, count_if, dict_values, join, map_x, max, parse_int, sortx_by_in_place, sumx_by_with_key }
+
+comptime part1_expected_value() => 241344943u64
+comptime part2_expected_value() => 243101568u64
+
+// Unimplemented unary operator 'CheckedUnaryOperator::MutableReference'file:///Users/lanmon/Development/AoC/2023/day7/day7.jakt
+comptime weights() throws -> [c_char:u8] {
+    mut results: [c_char:u8] = [:]
+    let values: [c_char] = [c'2', c'3', c'4', c'5', c'6', c'7', c'8', c'9', c'T', c'J', c'Q', c'K', c'A']
+    for i in 0..values.size() {
+        results.set(values[i], i as! u8)
+    }
+    return results
+}
+comptime p2weights() throws -> [c_char:u8] {
+    mut results: [c_char:u8] = [:]
+    let values: [c_char] = [c'J', c'2', c'3', c'4', c'5', c'6', c'7', c'8', c'9', c'T', c'Q', c'K', c'A']
+    for i in 0..values.size() {
+        results.set(values[i], i as! u8)
+    }
+    return results
+}
+
+enum Hand {
+    // Five of a kind, where all five cards have the same label: AAAAA
+    FiveOfAKind(cards: String, bid: u64)
+    // Four of a kind, where four cards have the same label and one card has a different label: AA8AA
+    FourOfAKind(cards: String, bid: u64)
+    // Full house, where three cards have the same label, and the remaining two cards share a different label: 23332
+    FullHouse(cards: String, bid: u64)
+    // Three of a kind, where three cards have the same label, and the remaining two cards are each different from any other card in the hand: TTT98
+    ThreeOfAKind(cards: String, bid: u64)
+    // Two pair, where two cards share one label, two other cards share a second label, and the remaining card has a third label: 23432
+    TwoPair(cards: String, bid: u64)
+    // One pair, where two cards share one label, and the other three cards have a different label from the pair and each other: A23A4
+    OnePair(cards: String, bid: u64)
+    // High card, where all cards' labels are distinct: 23456
+    HighCard(cards: String, bid: u64)
+
+    fn from_line(line: String) throws -> Hand {
+        let parts = line.split(c' ')
+        let cards = parts[0]
+        let bid = parse_int<u64>(parts[1])
+
+        mut seen: [c_char:u8] = [:]
+        for i in 0..cards.length() {
+            let byte = cards.byte_at(i) as! c_char
+            seen.set(byte, (seen.get(byte) ?? 0) + 1)
+        }
+        return match seen.keys().size() {
+            1 => FiveOfAKind(cards, bid)
+            2 => {
+                for (_, count) in seen {
+                    if count == 4 {
+                        return FourOfAKind(cards, bid)
+                    }
+                }
+                yield FullHouse(cards, bid)
+            }
+            3 => {
+                for (_, count) in seen {
+                    if count == 3 {
+                        return ThreeOfAKind(cards, bid)
+                    }
+                }
+                yield TwoPair(cards, bid)
+            }
+            4 => OnePair(cards, bid)
+            5 => HighCard(cards, bid)
+            else => { abort() }
+        }
+    }
+    fn from_line_2(line: String) throws -> Hand {
+        let parts = line.split(c' ')
+        let cards = parts[0]
+        let bid = parse_int<u64>(parts[1])
+
+        mut seen: [c_char:u8] = [:]
+
+        for i in 0..cards.length() {
+            let byte = cards.byte_at(i) as! c_char
+            seen.set(byte, (seen.get(byte) ?? 0) + 1)
+        }
+        let j_count = seen.get(c'J') ?? 0
+
+        return match seen.keys().size() {
+            1 => FiveOfAKind(cards, bid)
+            2 => match j_count {
+                0 => {
+                    for (_, count) in seen {
+                        if count == 4 {
+                            return FourOfAKind(cards, bid)
+                        }
+                    }
+                    yield FullHouse(cards, bid)
+                }
+                else => FiveOfAKind(cards, bid)
+            }
+            3 => match j_count {
+                0 => { // AAJJC, JBBCC, JJJAB
+                    for (_, count) in seen {
+                        if count == 3 {
+                            return ThreeOfAKind(cards, bid)
+                        }
+                    }
+                    yield TwoPair(cards, bid)
+                }
+                1 => {
+                    for (_, count) in seen {
+                        if count == 3 {
+                            return FourOfAKind(cards, bid)
+                        }
+                    }
+                    yield FullHouse(cards, bid)
+                }
+                else => FourOfAKind(cards, bid)
+            }
+
+            4 => match j_count {
+                1 => ThreeOfAKind(cards, bid)
+                else => OnePair(cards, bid)
+            }
+            5 => match j_count {
+                1 => OnePair(cards, bid)
+                else => HighCard(cards, bid)
+            }
+            else => { abort() }
+        }
+    }
+    fn is_stronger_than(this, anon other: Hand, weights: [c_char:u8]) throws -> bool {
+        let score = score(hand: .cards())
+        let other_score = score(hand: other.cards())
+
+        if score == other_score {
+            return .compare_cards(other, weights)
+        }
+        return score > other_score
+    }
+    private fn compare_cards(this, anon other: Hand, weights: [c_char:u8]) throws -> bool {
+        let a = .cards()
+        let b = other.cards()
+        for i in 0..a.length() {
+            let a_char = a.byte_at(i) as! c_char
+            let b_char = b.byte_at(i) as! c_char
+            if a_char != b_char {
+                return weights[a_char] > weights[b_char]
+            }
+        }
+        return false
+    }
+
+    fn cards(this) -> String => match this {
+        else(cards) => cards
+    }
+    fn bid(this) -> u64 => match this {
+        else(bid) => bid
+    }
+    fn replacements(this) throws -> [String] {
+        return rep(hand: .cards())
+    }
+}
+
+fn rep(hand: String) throws -> [String] {
+    if hand.is_empty() {
+        return [""]
+    }
+    mut results: [String] = []
+    let possibilities = match hand.byte_at(0) {
+        b'J' => ["2", "3", "4", "5", "6", "7", "8", "9", "T", "Q", "K", "A"]
+        else => [hand.substring(start: 0, length: 1)]
+    }
+
+    for possibility in possibilities {
+        for c in rep(hand: hand.substring(start: 1, length: hand.length() - 1)) {
+            results.push(possibility + c)
+        }
+    }
+    return results
+}
+
+fn score(hand: String) throws -> u8 {
+    let counts = char_counts<u8>(hand)
+    let counts_values = dict_values(counts)
+    let counts_set = as_set(counts_values)
+
+    if counts_set.contains(5u8) {
+        return 6
+    }
+    if counts_set.contains(4u8) {
+        return 5
+    }
+    if counts_set.contains(3u8) {
+        if counts_set.contains(2u8) {
+            return 4
+        }
+        return 3
+    }
+
+    if count_if(counts_values, &fn(item: u8) -> bool => item == 2) == 2 {
+        return 2
+    }
+
+    if counts_set.contains(2u8) {
+        return 1
+    }
+
+    return 0
+}
+fn compare_cards(hand: String, other: String, weights: [c_char:u8]) throws -> bool {
+    for i in 0..hand.length() {
+        let a_char = hand.byte_at(i) as! c_char
+        let b_char = other.byte_at(i) as! c_char
+        if a_char != b_char {
+            return weights[a_char] > weights[b_char]
+        }
+    }
+    return false
+}
+
+fn classify(hand: String) throws -> u8 => max(
+    map_x(
+        rep(hand)
+        &fn(item: String) throws -> u8 => score(hand: item)
+    )
+)
+
+fn part1(lines: [String]) throws -> u64 {
+    mut hands = map_x(lines, &fn(item: String) throws => Hand::from_line(line: item))
+    sortx_by_in_place(&mut hands, &fn(a: Hand, b: Hand) throws -> bool => a.is_stronger_than(b, weights: weights()))
+    return sumx_by_with_key(hands, &fn(item: Hand, i: usize) throws -> u64 => item.bid() * (i as! u64 + 1u64))
+}
+fn part2(lines: [String]) throws -> u64 {
+    mut hands = map_x(lines, &fn(item: String) throws -> (String, u64) {
+        let parts = item.split(c' ')
+        return (parts[0], parse_int<u64>(parts[1]))
+    })
+    mut classified = map_x(hands, &fn(item: (String, u64)) throws -> (String, u8, u64) {
+        return (item.0, classify(hand: item.0), item.1)
+    })
+
+    sortx_by_in_place(
+        &mut classified
+        &fn(a: (String, u8, u64), b: (String, u8, u64)) throws -> bool {
+            if a.1 != b.1 {
+                return a.1 > b.1
+            }
+            return compare_cards(hand: a.0, other: b.0, weights: p2weights())
+        }
+    )
+
+    return sumx_by_with_key(classified, &fn(item: (String, u8, u64), i: usize) throws -> u64 => item.2 * (i as! u64 + 1u64))
+}
