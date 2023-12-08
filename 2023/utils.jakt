@@ -56,6 +56,43 @@ fn split(anon bytes: [u8], split_char: c_char) throws -> [String] {
     for b in bytes { sb.append(b) }
     return sb.to_string().split(split_char)
 }
+fn split_lines_preserving_empty_lines(anon bytes: [u8]) throws -> [String] {
+    mut lines: [String] = []
+    mut sb = StringBuilder::create()
+    for b in bytes {
+        if b == 10 {
+            lines.push(sb.to_string())
+            sb.clear()
+            continue
+        }
+        sb.append(b)
+    }
+
+    if not sb.is_empty() {
+        lines.push(sb.to_string())
+    }
+    return lines
+}
+fn trim_whitespace(anon str: String) -> String {
+    mut index_of_first_non_space = 0uz
+    for i in 0..str.length() {
+        if str.byte_at(i) != b' ' {
+            index_of_first_non_space = i
+            break
+        }
+    }
+    mut index_of_last_non_space = 0uz
+    for i in ((str.length() - 1)..0).inclusive() {
+        if str.byte_at(i) != b' ' {
+            index_of_last_non_space = i
+            break
+        }
+    }
+    return str.substring(start: index_of_first_non_space, length: index_of_last_non_space - index_of_first_non_space + 1)
+}
+fn trim(anon str: String, first: usize, last: usize) -> String {
+    return str.substring(start: first, length: str.length() - first - last)
+}
 
 fn get(anon strs: [String], anon at: (usize, usize)) -> u8 => strs[at.0].byte_at(at.1)
 
@@ -291,7 +328,7 @@ fn as_set<T>(anon ts: [T]) throws -> {T} {
     return t_set
 }
 
-fn join(anon ts: [u8], separator: String = "") throws -> String {
+fn join_bytes(anon ts: [u8], separator: String = "") throws -> String {
     mut sb = StringBuilder::create()
     mut first = true
     for t in ts {
@@ -302,4 +339,13 @@ fn join(anon ts: [u8], separator: String = "") throws -> String {
         first = false
     }
     return sb.to_string()
+}
+
+fn everyx<T>(anon ts: [T], anon cb: &fn(item: T) throws -> bool) throws -> bool {
+    for t in ts {
+        if not cb(item: t) {
+            return false
+        }
+    }
+    return true
 }

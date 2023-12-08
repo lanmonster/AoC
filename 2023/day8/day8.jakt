@@ -1,0 +1,123 @@
+import relative parent::utils { everyx, split_lines_preserving_empty_lines, trim, trim_whitespace }
+import extern "thread" {
+    namespace std {
+
+    extern struct thread {
+        fn thread(anon cb: &fn() throws -> void) -> thread
+        fn join(this)
+    }
+    }
+}
+
+comptime part1_expected_value() => 19199u64
+comptime part2_expected_value() => 0u64
+
+fn main() {
+    mut t1 = std::thread(&fn() throws {
+        println("{}", "hello")
+    })
+    t1.join()
+    // mut input_file = File::open_for_reading("./day8/input.txt")
+    // mut lines = split_lines_preserving_empty_lines(input_file.read_all())
+    // part2(lines)
+}
+
+fn part1(lines: [String]) throws -> u64 {
+    mut nodes: [String:(String, String)] = [:]
+    for i in 1..lines.size() {
+        let line = lines[i]
+        if line.is_empty() {
+            continue
+        }
+        let parts = line.split(c'=')
+        let key = trim_whitespace(parts[0])
+        let values = trim(trim_whitespace(parts[1]), first: 1, last: 1).split(c',')
+        let l = trim_whitespace(values[0])
+        let r = trim_whitespace(values[1])
+
+        nodes.set(key, (l, r))
+    }
+
+    mut steps = 0u64
+    mut current_node = "AAA"
+    for b in Instructions(seed: lines[0]) {
+        current_node = match b {
+            b'L' => nodes[current_node].0 // indexed access with an optional causes it to blow up but no error from compiler
+            b'R' => nodes[current_node].1
+            else => { abort() }
+        }
+        steps++
+        if current_node == "ZZZ" {
+            break
+        }
+    }
+    return steps
+}
+fn part2(lines: [String]) throws -> u64 {
+    mut nodes: [String:(String, String)] = [:]
+    mut current_nodes: [String] = []
+    for i in 1..lines.size() {
+        let line = lines[i]
+        if line.is_empty() {
+            continue
+        }
+        let parts = line.split(c'=')
+        let key = trim_whitespace(parts[0])
+        if key.ends_with("A") {
+            current_nodes.push(key)
+        }
+        let values = trim(trim_whitespace(parts[1]), first: 1, last: 1).split(c',')
+        let l = trim_whitespace(values[0])
+        let r = trim_whitespace(values[1])
+
+        nodes.set(key, (l, r))
+    }
+
+    mut steps = 0u64
+    for b in Instructions(seed: lines[0]) {
+        println("current nodes: {}", current_nodes)
+        for i in 0..current_nodes.size() {
+            current_nodes[i] = match b {
+                b'L' => nodes[current_nodes[i]].0 // indexed access with an optional causes it to blow up but no error from compiler
+                b'R' => nodes[current_nodes[i]].1
+                else => { abort() }
+            }
+        }
+        steps++
+        if everyx(current_nodes, &fn(item: String) throws -> bool => item.ends_with("Z")) {
+            break
+        }
+    }
+    println("{}", steps)
+    return steps
+}
+
+struct Instructions implements(Iterable<u8>) {
+    seed: String
+    i: usize = 0
+    fn next(mut this) -> u8? {
+        let byte = .seed.byte_at(.i)
+        // .i = (.i + 1) % .seed.length()
+        .i++
+        if .i >= .seed.length() {
+            .i = 0
+        }
+        return byte
+    }
+}
+
+struct Node {
+    value: String
+    l: String
+    r: String
+
+    fn from_line(line: String) -> Node {
+        let parts = line.split(c'=')
+        let sides = parts[1].substring(start: 1, length: parts[1].length() - 2).split(c',')
+        return Node(
+            value: parts[0]
+            l: sides[0]
+            r: sides[1]
+        )
+    }
+}
