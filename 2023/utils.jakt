@@ -305,6 +305,42 @@ fn sortx_by_in_place<T>(anon ts: &mut [T], anon cb: &fn(a: T, b: T) throws -> bo
         }
     }
 }
+
+fn quicksort<T requires(Compare)>(anon arr: &mut [T], start: usize, end: usize) {
+    if (start < end) {
+        let pivot = partition(&mut arr, start, end)
+        println("pivot: {}", pivot)
+        println("arr: {}", arr)
+        // println("lhs: {}", arr[start..(pivot)])
+        // println("rhs: {}", arr[(pivot + 1)..(end + 1)])
+
+        // quicksort(&mut arr, start, end: pivot)
+        // quicksort(&mut arr, start: pivot + 1, end: end + 1)
+    }
+
+}
+
+fn partition<T requires(Compare)>(anon arr: &mut [T], start: usize, end: usize) -> usize {
+    let pivot = arr[end]
+    mut i = (start as! i64) - 1
+
+    for j in (start..end) {
+        println("comparing {} to {}", arr[j], pivot)
+        if arr[j] < pivot {
+            i++
+            println("swapping {} and {}", arr[i], arr[j])
+            swap(&mut arr, i as! usize, j)
+            println("after swap {}", arr)
+            println("arr[i] = {}", arr[i])
+        }
+
+    }
+
+    swap(&mut arr, (i + 1) as! usize, end)
+
+    return (i + 1) as! usize
+}
+
 fn swap<T>(anon ts: &mut [T], anon a: usize, anon b: usize) {
     let temp = ts[a]
     ts[a] = ts[b]
