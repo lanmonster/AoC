@@ -1,0 +1,41 @@
+import relative parent::utils { every, map_x, parse_ints, sum }
+
+comptime part1_expected_value() => 1972648895u64
+comptime part2_expected_value() => 919u64
+
+fn part1(lines: [String]) throws -> u64 =>
+    sum(
+        map_x(
+            lines
+            &fn(item: String) throws -> i64 => next_digits(parse_ints<i64>(item)).1
+        )
+    ) as! u64
+
+
+fn part2(lines: [String]) throws -> u64 =>
+    sum(
+        map_x(
+            lines
+            &fn(item: String) throws -> i64 => next_digits(parse_ints<i64>(item)).0
+        )
+    ) as! u64
+
+fn next_digits(anon history: [i64]) throws -> (i64, i64) {
+    let ds = diffs(history)
+    if every(ds, &fn[&ds](item: i64) -> bool => item == ds[0]) {
+        return (history.first()! - ds[0], history.last()! + ds[0])
+    }
+
+    let (prev, next) = next_digits(ds)
+    return (history.first()! - prev, history.last()! + next)
+}
+
+fn diffs(anon values: [i64]) throws -> [i64] {
+    mut result: [i64] = []
+
+    for i in 1..values.size() {
+        result.push(values[i]-values[i - 1])
+    }
+
+    return result
+}

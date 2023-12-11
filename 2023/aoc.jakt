@@ -6,6 +6,7 @@ import day5::day5 as d5
 import day6::day6 as d6
 import day7::day7 as d7
 import day8::day8 as d8
+import day9::day9 as d9
 import utils { split }
 
 fn main(args: [String]) {
@@ -30,6 +31,7 @@ fn main(args: [String]) {
         "6" => (d6::part1_expected_value(), d6::part1(lines), d6::part2_expected_value(), d6::part2(lines))
         "7" => (d7::part1_expected_value(), d7::part1(lines), d7::part2_expected_value(), d7::part2(lines))
         "8" => (d8::part1_expected_value(), d8::part1(lines), d8::part2_expected_value(), d8::part2(lines))
+        "9" => (d9::part1_expected_value(), d9::part1(lines), d9::part2_expected_value(), d9::part2(lines))
         else => {eprintln("unrecognized arg: {}", args[1]); abort()}
     }
 

@@ -12,31 +12,25 @@ fn is_digit(anon c: u8) -> bool {
 }
 
 fn as_u64(anon str: String) -> u64 => parse_int<u64>(str)
-fn parse_ints<T requires(Integral)>(anon str: String) throws -> [T] {
-    mut results: [T] = []
-    mut result: T? = 0
-    for i in 0..str.length() {
-        let byte = str.byte_at(i)
-        if byte == b' ' {
-            if result.has_value() {
-                results.push(result!)
-                result = None
-            }
-            continue
-        }
-        let value = (byte - b'0') as! T
-        result = (result ?? 0) * 10 + value
-    }
-    return results
-}
+fn parse_ints<T requires(Integral)>(anon str: String) throws -> [T] =>
+    map_x(str.split(c' '), &fn(item: String) throws -> T => parse_int<T>(item))
+
 fn parse_int<T requires(Integral)>(anon str: String) -> T {
     mut result: T = 0
+    mut is_negative = false
     for i in 0..str.length() {
         let byte = str.byte_at(i)
+        if byte == b'-' {
+            is_negative = true
+            continue
+        }
         let value: T = (byte - b'0')
         result = result * 10 + value
     }
-    return result
+    return result * match is_negative {
+        true => -1 as! T
+        false => 1 as! T
+    }
 }
 fn as_u64_ignoring_space(anon str: String) -> u64 {
     mut result = 0u64
@@ -152,7 +146,7 @@ fn sum<T requires(Integral)>(anon ts: [T]) -> i64 {
     }
     return sum
 }
-fn sum<T requires(Floating)>(anon ts: [T]) -> f64 {
+fn sum_f<T requires(Floating)>(anon ts: [T]) -> f64 {
     mut sum = 0.0
     for t in ts {
         sum += t
@@ -347,4 +341,13 @@ fn gcd<T requires(Integral)>(anon a: T, anon b: T) -> T {
     }
 
     return gcd(b, a % b)
+}
+
+fn every<T>(anon ts: [T], anon cb: &fn(item: T) -> bool) -> bool {
+    for t in ts {
+        if not cb(item: t) {
+            return false
+        }
+    }
+    return true
 }
