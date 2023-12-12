@@ -1,4 +1,4 @@
-import relative parent::utils as utils
+import relative parent::utils { Queue, cantor_pairing, set_intersect, set_union }
 
 comptime part1_expected_value() => 7102u64
 comptime part2_expected_value() => 363u64
@@ -291,7 +291,6 @@ struct Index implements(Hashable,Equal<Index>) { // hint the signature of unimpl
         return results
     }
 }
-fn cantor_pairing(anon a: usize, anon b: usize) -> usize => (a + b) * (a + b + 1) / 2 + a
 
 class Node { // this being a struct causes a segfault but no warning from compiler
     index: Index
@@ -315,37 +314,4 @@ class Node { // this being a struct causes a segfault but no warning from compil
     }
 }
 
-struct Queue<T> {
-    private values: [T]
-    fn create(anon values: [T] = []) -> Queue<T> => Queue(values)
-    fn is_empty(this) -> bool => .values.is_empty()
-    fn pop(mut this) throws -> T {
-        if .is_empty() {
-            throw Error::from_string_literal("cannot pop an empty queue")
-        }
-        return .values.pop()!
-    }
-    fn push(mut this, anon value: T) throws {
-        .values.insert(before_index: 0, value)
-    }
-}
 
-fn set_intersect<T>(anon a: {T}, anon b: {T}) throws -> {T} {
-    mut result: {T} = {}
-    for t in b {
-        if a.contains(t) {
-            result.add(t)
-        }
-    }
-    return result
-}
-fn set_union<T>(anon a: {T}, anon b: {T}) throws -> {T} {
-    mut result: {T} = {}
-    for t in a {
-        result.add(t)
-    }
-    for t in b {
-        result.add(t)
-    }
-    return result
-}

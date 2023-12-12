@@ -139,6 +139,14 @@ fn sumx_by_with_key<T, U requires(Integral)>(anon ts: [T], anon cb: &fn(anon ite
     return sum
 }
 
+fn reduce<T, U>(anon ts: [T], anon cb: &fn(accumulator: U, item: T, index: usize) throws -> U, initial_value: U) -> U {
+    mut accumulator = initial_value
+    for i in 0..ts.size() {
+        accumulator = cb(accumulator, item: ts[i], index: i)
+    }
+    return accumulator
+}
+
 fn sum<T requires(Integral)>(anon ts: [T]) -> i64 {
     mut sum = 0i64
     for t in ts {
@@ -351,3 +359,50 @@ fn every<T>(anon ts: [T], anon cb: &fn(item: T) -> bool) -> bool {
     }
     return true
 }
+
+fn set_intersect<T>(anon a: {T}, anon b: {T}) throws -> {T} {
+    mut result: {T} = {}
+    for t in b {
+        if a.contains(t) {
+            result.add(t)
+        }
+    }
+    return result
+}
+fn set_union<T>(anon a: {T}, anon b: {T}) throws -> {T} {
+    mut result: {T} = {}
+    for t in a {
+        result.add(t)
+    }
+    for t in b {
+        result.add(t)
+    }
+    return result
+}
+
+fn cantor_pairing(anon a: usize, anon b: usize) -> usize =>
+    (a + b) * (a + b + 1) / 2 + a
+
+struct Queue<T> {
+    private values: [T]
+    fn create(anon values: [T] = []) -> Queue<T> => Queue(values)
+    fn is_empty(this) -> bool => .values.is_empty()
+    fn pop(mut this) throws -> T {
+        if .is_empty() {
+            throw Error::from_string_literal("cannot pop an empty queue")
+        }
+        return .values.pop()!
+    }
+    fn push(mut this, anon value: T) throws {
+        .values.insert(before_index: 0, value)
+    }
+}
+
+fn absolute_value(anon t: i64) -> u64 {
+    if t < 0 {
+        return (t * -1) as! u64
+    }
+    return t as! u64
+}
+fn manhattan_distance(anon a: (i64, i64), anon b: (i64, i64)) -> u64 =>
+    absolute_value(a.0 - b.0) + absolute_value(a.1 - b.1)

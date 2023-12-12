@@ -1,0 +1,184 @@
+import relative parent::utils { Queue, absolute_value, cantor_pairing, manhattan_distance, map_x, max, min, sum }
+
+comptime part1_expected_value() => 9627977u64
+comptime part2_expected_value() => 644248339497u64
+
+fn part1(lines: [String]) throws -> u64 => sum(
+    map_x(
+        unique_pairs(
+            map_x(
+                find_galaxies(expand_universe(lines))
+                &fn(item: (usize, usize)) throws -> (i64, i64) => (item.0 as! i64, item.1 as! i64)
+            )
+        )
+        &fn(
+            item: ((i64, i64), (i64, i64))
+        ) throws -> i64 => manhattan_distance(item.0, item.1) as! i64
+    )
+) as! u64
+
+fn part2(lines: [String]) throws -> u64 {
+    let galaxies = find_galaxies(lines)
+    let pairs = unique_pairs(galaxies)
+    let empty_rows = find_empty_rows(lines)
+    let empty_cols = find_empty_rows(transpose(lines))
+
+    mut sum = 0u64
+
+    for (a, b) in pairs {
+        for r in min([a.0, b.0])..max([a.0, b.0]) {
+            sum += match empty_rows.contains(r) {
+                true => 1000000
+                false => 1
+            }
+        }
+        for c in min([a.1, b.1])..max([a.1, b.1]) {
+            sum += match empty_cols.contains(c) {
+                true => 1000000
+                false => 1
+            }
+        }
+    }
+
+    return sum
+}
+
+fn bytes(anon s: String) throws -> [u8] {
+    mut results: [u8] = []
+    for i in 0..s.length() {
+        results.push(s.byte_at(i))
+    }
+    return results
+}
+
+fn unique_pairs<T>(anon ts: [T]) throws -> [(T, T)] {
+    mut results: [(T, T)] = []
+    for i in 0..ts.size() {
+        for j in 0..i {
+            results.push((ts[i], ts[j]))
+        }
+    }
+    return results
+}
+
+fn find_empty_rows(anon input: [String]) throws -> {usize} {
+    mut temp: {usize} = {}
+    for i in 0..input.size() {
+        if is_all_dot(input[i]) {
+            temp.add(i)
+        }
+    }
+    return temp
+}
+
+fn expand_universe(anon input: [String]) throws -> [String] {
+    mut temp: [String] = []
+    for line in input {
+        temp.push(line)
+        if is_all_dot(line) {
+            temp.push(line)
+        }
+    }
+    let transposed = transpose(temp)
+    mut result: [String] = []
+    for line in transposed {
+        result.push(line)
+        if is_all_dot(line) {
+            result.push(line)
+        }
+    }
+    return transpose(result)
+}
+
+fn is_all_dot(anon s: String) -> bool {
+    for i in 0..s.length() {
+        if s.byte_at(i) != b'.' {
+            return false
+        }
+    }
+    return true
+}
+
+fn transpose(anon input: [String]) throws -> [String] {
+    mut result: [String] = []
+    mut sbs: [StringBuilder] = []
+    for i in 0..input[0].length() {
+        sbs.push(StringBuilder::create())
+    }
+    for i in 0..input[0].length() {
+        for line in input {
+            sbs[i].append(line.byte_at(i))
+        }
+    }
+
+    return map_x(sbs, &fn(item: StringBuilder) throws -> String => item.to_string())
+}
+
+fn find_galaxies(anon universe: [String]) throws -> [(usize, usize)] {
+    mut galaxies: [(usize, usize)] = []
+    for i in 0..universe.size() {
+        let row = universe[i]
+        for j in 0..row.length() {
+            if row.byte_at(j) == b'#' {
+                galaxies.push(
+                    // Index::create(
+                    (i, j)
+                    // row_count: universe.size()
+                    // col_count: row.length()
+                    // )
+                )
+
+            }
+        }
+    }
+    return galaxies
+}
+
+struct Index implements(Hashable,Equal<Index>) {
+    row: usize
+    col: usize
+    private row_count: usize
+    private col_count: usize
+
+    fn create(
+        anon p: (usize, usize)
+        row_count: usize
+        col_count: usize
+    ) -> Index => Index(row: p.0, col: p.1, row_count, col_count)
+
+    fn hash(this) -> u32 => cantor_pairing(
+        cantor_pairing(.row, .col)
+        cantor_pairing(.row_count, .col_count)
+    ) as! u32
+    fn equals(this, anon other: Index) -> bool =>
+        .row == other.row and .col == other.col and .row_count == other.row_count and .col_count == other.col_count
+
+    fn has_north(this) -> bool => .row > 0
+    fn north(this) -> Index => Index(row: .row - 1, col: .col, row_count: .row_count, col_count: .col_count)
+
+    fn has_south(this) -> bool => .row < .row_count
+    fn south(this) -> Index => Index(row: .row + 1, col: .col, row_count: .row_count, col_count: .col_count)
+
+    fn has_east(this) -> bool => .col < .col_count
+    fn east(this) -> Index => Index(row: .row, col: .col + 1, row_count: .row_count, col_count: .col_count)
+
+    fn has_west(this) -> bool => .col > 0
+    fn west(this) -> Index => Index(row: .row, col: .col - 1, row_count: .row_count, col_count: .col_count)
+
+    fn neighbors(this) throws -> [Index] {
+        mut results: [Index] = []
+        if .has_north() {
+            results.push(.north())
+        }
+        if .has_south() {
+            results.push(.south())
+        }
+        if .has_east() {
+            results.push(.east())
+        }
+        if .has_west() {
+            results.push(.west())
+        }
+        return results
+    }
+}
