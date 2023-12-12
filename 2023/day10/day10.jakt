@@ -1,0 +1,351 @@
+import relative parent::utils as utils
+
+comptime part1_expected_value() => 7102u64
+comptime part2_expected_value() => 363u64
+
+fn part1(lines: [String]) throws -> u64 {
+    let start = locate_s(lines)
+
+    mut q = Queue::create([start])
+    mut seen: {Index} = {}
+    while not q.is_empty() {
+        let index = q.pop()
+        let character = get(lines, at: index)
+
+        if index.has_north() and can_go_up(character) {
+            let north_index = index.north()
+            let north_character = get(lines, at: north_index)
+            if can_go_down(north_character) and not seen.contains(north_index) {
+                seen.add(north_index)
+                q.push(north_index)
+            }
+        }
+        if index.has_south() and can_go_down(character) {
+            let south_index = index.south()
+            let south_character = get(lines, at: south_index)
+            if can_go_up(south_character) and not seen.contains(south_index) {
+                seen.add(south_index)
+                q.push(south_index)
+            }
+        }
+        if index.has_east() and can_go_right(character) {
+            let east_index = index.east()
+            let east_character = get(lines, at: east_index)
+            if can_go_left(east_character) and not seen.contains(east_index) {
+                seen.add(east_index)
+                q.push(east_index)
+            }
+        }
+        if index.has_west() and can_go_left(character) {
+            let west_index = index.west()
+            let west_character = get(lines, at: west_index)
+            if can_go_right(west_character) and not seen.contains(west_index) {
+                seen.add(west_index)
+                q.push(west_index)
+            }
+        }
+    }
+
+    return (seen.size() / 2) as! u64
+}
+fn part2(lines: [String]) throws -> u64 {
+    let (loop_, grid) = replace_s(lines)
+    mut indices: [[Index]] = []
+    for i in 0..grid.size() {
+        let line = grid[i]
+        mut row: [Index] = []
+        for j in 0..line.length() {
+            row.push(Index::create(
+                (i, j)
+                row_count: lines.size()
+                col_count: line.length()
+            ))
+        }
+        indices.push(row)
+    }
+    let new_lines = replace_non_loop(lines: grid, indices, loop_)
+
+    mut outside: {Index} = {}
+    for i in 0..indices.size() {
+        mut is_inside = false
+        mut going_up: bool? = None
+        for index in indices[i] {
+            let character = get(new_lines, at: index)
+            match character {
+                b'|' => {
+                    is_inside = not is_inside
+                }
+                b'L' | b'F' => {
+                    going_up = character == b'L'
+                }
+                b'7' | b'J' => {
+                    if character != match going_up.has_value() {
+                        true => match going_up! {
+                            true => b'J'
+                            false => b'7'
+                        }
+                        false => b'7'
+                    }
+                    {
+                        is_inside = not is_inside
+                    }
+                    going_up = None
+                }
+                else => {}
+            }
+            if not is_inside {
+                outside.add(index)
+            }
+        }
+    }
+    return (new_lines.size() * new_lines[0].length() - set_union(loop_, outside).size()) as! u64
+
+}
+
+fn find_loop(lines: [String]) throws -> ({Index}, u8) {
+    let start = locate_s(lines)
+
+    mut q = Queue::create([start])
+    mut possible_s: {u8} = {
+        b'|',
+        b'-',
+        b'L',
+        b'J',
+        b'7',
+        b'F',
+    }
+    mut seen: {Index} = {}
+    while not q.is_empty() {
+        let index = q.pop()
+        let character = get(lines, at: index)
+
+        if index.has_north() and can_go_up(character) {
+            let north_index = index.north()
+            let north_character = get(lines, at: north_index)
+            if can_go_down(north_character) and not seen.contains(north_index) {
+                seen.add(north_index)
+                q.push(north_index)
+                if character == b'S' {
+                    possible_s = set_intersect(possible_s,  {b'|', b'J', b'L' })
+                }
+            }
+        }
+        if index.has_south() and can_go_down(character) {
+            let south_index = index.south()
+            let south_character = get(lines, at: south_index)
+            if can_go_up(south_character) and not seen.contains(south_index) {
+                seen.add(south_index)
+                q.push(south_index)
+                if character == b'S' {
+                    possible_s = set_intersect(possible_s,  {b'|', b'7', b'F' })
+                }
+            }
+        }
+        if index.has_east() and can_go_right(character) {
+            let east_index = index.east()
+            let east_character = get(lines, at: east_index)
+            if can_go_left(east_character) and not seen.contains(east_index) {
+                seen.add(east_index)
+                q.push(east_index)
+                if character == b'S' {
+                    possible_s = set_intersect(possible_s,  {b'-', b'L', b'F' })
+                }
+            }
+        }
+        if index.has_west() and can_go_left(character) {
+            let west_index = index.west()
+            let west_character = get(lines, at: west_index)
+            if can_go_right(west_character) and not seen.contains(west_index) {
+                seen.add(west_index)
+                q.push(west_index)
+                if character == b'S' {
+                    possible_s = set_intersect(possible_s,  {b'-', b'J', b'7' })
+                }
+            }
+        }
+    }
+    return (seen, possible_s.iterator().next()!)
+}
+
+fn replace_s(lines: [String]) throws -> ({Index}, [String]) {
+    let (loop_, s) = find_loop(lines)
+
+    mut sb = StringBuilder::create()
+    sb.append(s)
+    let replacement_s = sb.to_string()
+
+    mut new_lines: [String] = []
+    for line in lines {
+        new_lines.push(line.replace(replace: "S", with: replacement_s))
+    }
+    return (loop_, new_lines)
+
+}
+
+fn replace_non_loop(lines: [String], indices: [[Index]], loop_: {Index}) throws -> [String] {
+
+    mut new_lines: [String] = []
+    for i in 0..indices.size() {
+        mut sb = StringBuilder::create()
+        for index in indices[i] {
+            sb.append(
+                match loop_.contains(index) {
+                    true => get(lines, at: index)
+                    false => b'.'
+                }
+            )
+        }
+        new_lines.push(sb.to_string())
+    }
+    return new_lines
+}
+
+fn get(anon lines: [String], at: Index) -> u8 => lines[at.row].byte_at(at.col)
+fn can_go_up(anon c: u8) -> bool => match c {
+    b'S' | b'|' | b'J' | b'L' => true
+    else => false
+}
+fn can_go_down(anon c: u8) -> bool => match c {
+    b'S' | b'|' | b'7' | b'F' => true
+    else => false
+}
+fn can_go_right(anon c: u8) -> bool => match c {
+    b'S' | b'-' | b'L' | b'F' => true
+    else => false
+}
+fn can_go_left(anon c: u8) -> bool => match c {
+    b'S' | b'-' | b'J' | b'7' => true
+    else => false
+}
+
+fn locate_s(lines: [String]) throws -> Index {
+    for row in 0..lines.size() {
+        let line = lines[row]
+        for col in 0..line.length() {
+            if line.byte_at(col) == b'S' {
+                return Index::create(
+                    (row, col)
+                    row_count: lines.size()
+                    col_count: line.length()
+                )
+            }
+        }
+    }
+    throw Error::from_string_literal("could not find S")
+}
+
+// | is a vertical pipe connecting north and south.
+// - is a horizontal pipe connecting east and west.
+// L is a 90-degree bend connecting north and east.
+// J is a 90-degree bend connecting north and west.
+// 7 is a 90-degree bend connecting south and west.
+// F is a 90-degree bend connecting south and east.
+// . is ground; there is no pipe in this tile.
+// S is the starting position of the animal; there is a pipe on this tile, but your sketch doesn't show what shape the pipe has.
+
+struct Index implements(Hashable,Equal<Index>) { // hint the signature of unimplemented trait fns
+    row: usize
+    col: usize
+    private row_count: usize
+    private col_count: usize
+
+    fn create(
+        anon p: (usize, usize)
+        row_count: usize
+        col_count: usize
+    ) -> Index => Index(row: p.0, col: p.1, row_count, col_count)
+
+    fn hash(this) -> u32 => cantor_pairing(
+        cantor_pairing(.row, .col)
+        cantor_pairing(.row_count, .col_count)
+    ) as! u32
+    fn equals(this, anon other: Index) -> bool =>
+        .row == other.row and .col == other.col and .row_count == other.row_count and .col_count == other.col_count
+
+    fn has_north(this) -> bool => .row > 0
+    fn north(this) -> Index => Index(row: .row - 1, col: .col, row_count: .row_count, col_count: .col_count)
+
+    fn has_south(this) -> bool => .row < .row_count
+    fn south(this) -> Index => Index(row: .row + 1, col: .col, row_count: .row_count, col_count: .col_count)
+
+    fn has_east(this) -> bool => .col < .col_count
+    fn east(this) -> Index => Index(row: .row, col: .col + 1, row_count: .row_count, col_count: .col_count)
+
+    fn has_west(this) -> bool => .col > 0
+    fn west(this) -> Index => Index(row: .row, col: .col - 1, row_count: .row_count, col_count: .col_count)
+
+    fn neighbors(this) throws -> [Index] {
+        mut results: [Index] = []
+        if .has_north() {
+            results.push(.north())
+        }
+        if .has_south() {
+            results.push(.south())
+        }
+        if .has_east() {
+            results.push(.east())
+        }
+        if .has_west() {
+            results.push(.west())
+        }
+        return results
+    }
+}
+fn cantor_pairing(anon a: usize, anon b: usize) -> usize => (a + b) * (a + b + 1) / 2 + a
+
+class Node { // this being a struct causes a segfault but no warning from compiler
+    index: Index
+    // if a struct has a member that references itself, error and hint that it should be a class
+    public next: Node?
+    public prev: Node?
+    public fn create(
+        index: Index
+        next: Node? = None
+        prev: Node? = None
+    ) throws -> Node => Node(
+        index
+        next
+        prev
+    )
+    public fn set_next(mut this, anon node: Node) {
+        .next = Some(node)
+    }
+    public fn set_prev(mut this, anon node: Node) {
+        .prev = Some(node)
+    }
+}
+
+struct Queue<T> {
+    private values: [T]
+    fn create(anon values: [T] = []) -> Queue<T> => Queue(values)
+    fn is_empty(this) -> bool => .values.is_empty()
+    fn pop(mut this) throws -> T {
+        if .is_empty() {
+            throw Error::from_string_literal("cannot pop an empty queue")
+        }
+        return .values.pop()!
+    }
+    fn push(mut this, anon value: T) throws {
+        .values.insert(before_index: 0, value)
+    }
+}
+
+fn set_intersect<T>(anon a: {T}, anon b: {T}) throws -> {T} {
+    mut result: {T} = {}
+    for t in b {
+        if a.contains(t) {
+            result.add(t)
+        }
+    }
+    return result
+}
+fn set_union<T>(anon a: {T}, anon b: {T}) throws -> {T} {
+    mut result: {T} = {}
+    for t in a {
+        result.add(t)
+    }
+    for t in b {
+        result.add(t)
+    }
+    return result
+}
